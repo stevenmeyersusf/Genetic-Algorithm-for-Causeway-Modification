@@ -13,7 +13,7 @@ Support was provided by the Tampa Bay Estuary Program.
 The hydrodynamic model of OTB was based on the Estuarine and Coastal Ocean Model (ECOM), itself a derivative of the Princeton Ocean Model. ECOM is FORTRAN-based, so the GA was largely written in FORTRAN to faciliate compatibility. A control file written in BASH was used to enable optimal usage of the multi-CPU workstation by the GA. Text files were also used to pass information to and between subroutines.
 
 Files in this repository are research-level, not professional.  
-They have not been cleaned. 
+They have not been cleaned. NOTE: paths names in scripts are original and will need to be updated after download.
 
 2. Outline 
 
