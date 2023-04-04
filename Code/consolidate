@@ -1,0 +1,7 @@
+rm temp2.f otbpt
+mv main.f tempmain
+cp tempmain temp2
+cat *.f >> temp2
+mv temp2 temp2.f
+mv tempmain main.f
+make otbpt

@@ -1,0 +1,113 @@
+      SUBROUTINE FIRST
+C     VERSION(03/02/90)
+      INCLUDE 'comdeck'
+C
+      IF(NUMEBC.EQ.0) GOTO 140
+      IF(OPTEBC(1:5).EQ.'DATA ') THEN
+      REWIND IUT90
+C
+      DO 100 I=1,100000
+      READ (IUT90,10,ERR=130) T2E
+      READ (IUT90,10        ) (DEBDRY(N,2),N=1,NUMEBC)      
+      IF(THOUR.LT.T2E) GOTO 110
+      T1E=T2E 
+      DO 120 N=1,NUMEBC
+ 120  DEBDRY(N,1)=DEBDRY(N,2) 
+ 100  CONTINUE
+ 110  CONTINUE
+C 
+      END IF
+ 140  CONTINUE
+C
+      IF (NUMEBC.EQ.0) GOTO 135
+      REWIND IUT94
+C
+      DO 101 I=1,100000
+c         write(6,*) 'reading t94'
+      READ (IUT94,10,ERR=130) T2TS,thour
+c      write(6,*) t2ts
+C
+      DO 136 N=1,NUMEBC
+      READ (IUT94,10) (DTBDRY(N,K,2),K=1,KBM1)
+      READ (IUT94,10) (DSBDRY(N,K,2),K=1,KBM1)
+      READ (IUT94,10) (DCCCBDRY(N,K,2),K=1,KBM1)
+136   CONTINUE
+      IF(THOUR.LT.T2TS) GOTO 111
+      T1TS=T2TS
+      DO 121 N=1,NUMEBC
+      DO 122 K=1,KBM1
+        DTBDRY(N,K,1)=DTBDRY(N,K,2)
+        DSBDRY(N,K,1)=DSBDRY(N,K,2)
+        DCCCBDRY(N,K,1)=DCCCBDRY(N,K,2)
+ 122  CONTINUE
+ 121  CONTINUE
+C
+ 101  CONTINUE
+ 111  CONTINUE
+C
+ 135  CONTINUE
+C 
+      IF(NUMQBC.EQ.0) GOTO 210
+      REWIND IUT91
+      DO 200 I=1,100000
+      READ (IUT91,10,ERR=130) T2Q
+      READ (IUT91,10        ) (DQDIS(N,2),N=1,NUMQBC)
+      READ (IUT91,10        ) (DTDIS(N,2),N=1,NUMQBC)
+      READ (IUT91,10        ) (DSDIS(N,2),N=1,NUMQBC)
+      READ (IUT91,10        ) (DCCCDIS(N,2),N=1,NUMQBC)
+      IF(THOUR.LT.T2Q) GOTO 210
+      T1Q=T2Q 
+      DO 220 N=1,NUMQBC
+      DQDIS(N,1)=DQDIS(N,2) 
+      DTDIS(N,1)=DTDIS(N,2) 
+      DSDIS(N,1)=DSDIS(N,2) 
+ 220  DCCCDIS(N,1)=DCCCDIS(N,2) 
+ 200  CONTINUE
+ 210  CONTINUE
+C 
+c      write(6,*) 'first numdbc=',numdbc
+      IF(NUMDBC.EQ.0) GO TO 310
+      REWIND IUT92
+      DO 300 I=1,100000
+      READ (IUT92,10,ERR=130) T2D
+      READ (IUT92,10        ) (DQDIFF(N,2),N=1,NUMDBC)
+      READ (IUT92,10        ) (DTDIFF(N,2),N=1,NUMDBC)
+      READ (IUT92,10        ) (DSDIFF(N,2),N=1,NUMDBC)
+      READ (IUT92,10        ) (DCCCDIFF(N,2),N=1,NUMDBC)
+      IF(THOUR.LT.T2D) GO TO 310
+      T1D=T2D
+      DO 320 N=1,NUMDBC
+      DQDIFF(N,1)=DQDIFF(N,2) 
+      DTDIFF(N,1)=DTDIFF(N,2) 
+      DSDIFF(N,1)=DSDIFF(N,2) 
+ 320  DCCCDIFF(N,1)=DCCCDIFF(N,2) 
+ 300  CONTINUE
+ 310  CONTINUE
+C 
+      REWIND IUT93
+      DO 400 I=1,100000
+      READ (IUT93,10,ERR=130) T2M
+c      write(6,*) 't2m=',t2m
+      READ (IUT93,10        ) DQPREC(2),DQEVAP(2),DTX(2),DTY(2),
+     .                        DHFLUX(2)
+c      write(6,*) dtx(2)
+      IF(THOUR.LT.T2M) GO TO 410
+      T1M=T2M
+      DQPREC(1)=DQPREC(2) 
+      DQEVAP(1)=DQEVAP(2) 
+      DTX   (1)=DTX   (2) 
+      DTY   (1)=DTY   (2) 
+      DHFLUX(1)=DHFLUX(2)
+ 400  CONTINUE
+ 410  CONTINUE
+C
+      RETURN
+C
+ 130  WRITE(6,20) 
+ 20   FORMAT(//' THERE IS INSUFFICIENT TEMPORAL DATA FOR THIS RUN'/,
+     .         '        REVISE INPUT DECK AND RESUBMIT '//)
+ 10   FORMAT(8E14.7)
+C      
+      STOP
+      END
+      

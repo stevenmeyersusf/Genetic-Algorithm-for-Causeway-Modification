@@ -1,0 +1,167 @@
+C     VERSION(09/20/91)
+C     revsed version for tampa bay real-time project 
+C     revised _____97 to add iuseedhr, iulasthr, intcold
+C     revised 6/12/97 to add ifpointfile,ifoponed for individual tseries files
+C     revised 6/13/97 to add character for path for data tseries files
+C     revised 8-16-97 to add depth** scales fro scaling bathymetry
+C                     scales are read in from first 2 lines of run_data   
+C	revised 6-23-99 dcb for drifter sub parameters
+c     revised to include ucenter,vcenter for ts output
+C >>>> OBAY PARAMETERS
+
+      PARAMETER (IM=36,JM=50,KB=11,KSL=3)    
+C >>>> OTHER PARAMETERS
+C
+      PARAMETER (IMM1=IM-1,JMM1=JM-1,KBM1=KB-1)
+      PARAMETER (IMM2=IM-2,JMM2=JM-2,KBM2=KB-2)
+      INTEGER IHISTM,ITRACM,EPTSM,VPTSM,FPTSM,EBCM,QBCM,DBCM,NUMPX,PAR,ndry
+      
+      PARAMETER (IHISTM=500,ITRACM=500)
+      PARAMETER (EPTSM=500,VPTSM=500,FPTSM=500)
+      PARAMETER (EBCM=100,QBCM=100,DBCM=100)
+      PARAMETER (NUMPX=100000,PAR=10)
+      PARAMETER (NSMPNTS=12)
+C
+      REAL ISPI,ISP2I,KM,KH,KQ,L,NU,sx,sy,sz
+      REAL P,hmin,cflmin,cflmin0
+      INTEGER EPTS,VPTS,FPTS,NOFI
+      INTEGER SEEDX,SEEDY,SEEDZ
+      INTEGER T1U,T2U
+      INTEGER IUS1,IUS2,IUS3,IUS4
+      integer ibath,iwds,idist,ido_wd,ireg,ido_adj,ibuoy
+      integer*4 nump,nadj
+
+c	particle tracking arrays
+      integer IORIG(NUMPX),JORIG(NUMPX),KORIG(NUMPX)
+      integer OTB(NUMPX),HB(NUMPX),LTB(NUMPX),MTB(NUMPX)
+      integer nact,nlast,nrel
+      real utrap(im,jm),vtrap(im,jm)  ! help solve trapping
+
+      LOGICAL CONSPLT,CONSTSR
+C
+      CHARACTER*4  DIRFLX
+      CHARACTER*10 TOR,ADVECT,HORZMIX,VERTMIX
+      CHARACTER*20 OPTEBC
+C++++ most of new commons for real-time project
+      CHARACTER*80 datapath
+      COMMON/BLKTAMPA/
+     &     iuseedhr, iulasthr, intcold,ifpointfile,
+     &     ifopenedv,ifopenede,hmin,
+     &     datapath,iuwl,iuvel,ibath,iwds,idist,nump,ido_wd,
+     &	   ido_adj,ireg,ibuoy
+C++++ 
+      COMMON/BLKCON/
+     .     DTE,DTI,HPRNU,VPRNU,UMOL,GRAV,RAMP,NU,HORCON,TLAG,
+     .     TIME,THOUR,ISTART,IEND,INT,IEXT,IPRINT,IAVGE,ISKILL,
+     .     seedhour, rlasthour,ndry, 
+     .     depthlb,depthmb,depthhb,depthot, 
+     .     IUPRT,IUGRD,IURUN,IUPLT,IUWRS,IURRS,IUHYD,IUTSR,IUFLW,
+C    .     iuseedhr, iulasthr, intcold,iuwl,iuvel
+     .     iucccres,dti0,horcon0,
+     .     SMOTH,ALPHA,DAYI,ISPLIT,ISPI,ISP2I,IUT90,IUT91,IUT92,
+     .     IUT93,IUT94,
+     .     TOR,ADVECT,HORZMIX,VERTMIX,OPTEBC,
+     .     NOFI,SEEDX,SEEDY,SEEDZ,
+     .     ICCCTIME(50),DEITCCC(50),NCCCTIME,startpart,hdry
+
+c   added in array for iccctime so can handle more than 1 tracking case per run
+
+C---------------- 1-D ARRAYS -------------------------------------------
+      COMMON/BLK1D/
+     .     DZR(KB),Z(KB),ZZ(KB),DZ(KB),DZZ(KB),DPTHSL(KSL)
+C---------------- 2-D ARRAYS -------------------------------------------
+      COMMON/BLK2D/
+     .     H(IM,JM),H1(IM,JM),H2(IM,JM),D(IM,JM),DT(IM,JM),ANG(IM,JM),  
+     .     ART(IM,JM),ARU(IM,JM),ARV(IM,JM),CBC(IM,JM),
+     .     DUM(IM,JM),DVM(IM,JM),FSM(IM,JM),COR(IM,JM),CURV42D(IM,JM),
+     .     WUSURF(IM,JM),WVSURF(IM,JM),WUBOT(IM,JM),WVBOT(IM,JM),
+     .     WTSURF(IM,JM),WSSURF(IM,JM),TPS(IM,JM),AAM2D(IM,JM),
+     .     WCCCSURF(IM,JM),
+     .     UAF(IM,JM),UA(IM,JM),UAB(IM,JM),VAF(IM,JM),VA(IM,JM),
+     .     VAB(IM,JM),ELF(IM,JM),EL(IM,JM),ELB(IM,JM),ATELB(IM,JM),
+     .     ETF(IM,JM),ET(IM,JM),ETB(IM,JM),FLUXUA(IM,JM),FLUXVA(IM,JM),
+     .     EGF(IM,JM),EGB(IM,JM),UTF(IM,JM),UTB(IM,JM),
+     .     VTF(IM,JM),VTB(IM,JM),
+     .     C11(IM,JM),C12(IM,JM),C21(IM,JM),C22(IM,JM),
+     .     P(NUMPX,PAR),RES(IM,JM),h0(IM,JM),WD(IM,JM),FSM0(IM,JM),
+     .	   isactive(NUMPX),utrap,vtrap
+
+C---------------- 3-D ARRAYS -------------------------------------------
+      COMMON/BLK3D/
+     .  A(IM,JM,KB),C(IM,JM,KB),VH(IM,JM,KB),VHP(IM,JM,KB),
+     .  PROD(IM,JM,KB),DTEF(IM,JM,KB),
+     .  UF(IM,JM,KB),VF(IM,JM,KB),CCCF(IM,JM,KB),
+     .  KM(IM,JM,KB),KH(IM,JM,KB),KQ(IM,JM,KB),L(IM,JM,KB),
+     .  Q2(IM,JM,KB),Q2B(IM,JM,KB),AAM(IM,JM,KB),
+     .  Q2L(IM,JM,KB),Q2LB(IM,JM,KB),
+     .  U(IM,JM,KB),UB(IM,JM,KB),W(IM,JM,KB),WR(IM,JM,KB),
+     .  V(IM,JM,KB),VB(IM,JM,KB),
+     .  T(IM,JM,KB),TB(IM,JM,KB),
+     .  S(IM,JM,KB),SB(IM,JM,KB),
+     .  CCC(IM,JM,KB),CCCB(IM,JM,KB),
+     .  RHO(IM,JM,KB),RMEAN(IM,JM,KB),TMEAN(IM,JM,KB),SMEAN(IM,JM,KB),
+     .  CCCMEAN(IM,JM,KB),
+     .  XMFL3D(IM,JM,KB), YMFL3D(IM,JM,KB)
+C----------- ARCHIVING AND SKILL ASSESSMENT ARRAYS ---------------------
+      COMMON/CONS/
+     .     CONSPLT,CONSTSR
+      COMMON/ARCH/
+     .     JHM,ARCU(IM,JM,KB),ARCV(IM,JM,KB),ARCUX(IM,JM,KB),
+     .     ARCVX(IM,JM,KB),ARCS(IM,JM,KB),ARCCCC(IM,JM,KB),
+     .     ARCT(IM,JM,KB),ARCW(IM,JM,KB),ARCKH(IM,JM,KB),
+     .     ARCET(IM,JM),IHIST(IHISTM,2),DEI
+      COMMON/ARCT/
+     .     JTM,ARCTU(IM,JM,KB),ARCTV(IM,JM,KB),
+     .     ARCTW(IM,JM,KB),ARCTKH(IM,JM,KB),ARCTAAM(IM,JM,KB),
+     .     ARCTES(IM,JM),ARCTED(IM,JM),
+     .     ARCTCCC(IM,JM,KB),
+     .     ITRAC(ITRACM,2),DEIT
+      COMMON/SKILL/
+     .     EPTS,VPTS,FPTS,ESAVE(EPTSM),DZSAVE(VPTSM),CCFLUX(FPTSM,KB),
+     .     INXIE(EPTSM),INXJE(EPTSM),INXIV(VPTSM),INXJV(VPTSM),
+     .     ISFLX(FPTSM),JSFLX(FPTSM),DIRFLX(FPTSM),NFLXE(FPTSM),
+     .     UZSAVE(VPTSM,KB),VZSAVE(VPTSM,KB),SZSAVE(VPTSM,KB),
+     .     ucenter(VPTSM,KB),vcenter(VPTSM,KB),
+     .     TZSAVE(VPTSM,KB),CCCZSAVE(VPTSM,KB),SKILLI,AREA,VOLUME
+C---------------------- BOUNDARY VALUE ARRAYS --------------------------
+      COMMON/EBC/
+     .     NUMEBC,IETA(EBCM),JETA(EBCM),ICON(EBCM),JCON(EBCM),
+     .     AMP(EBCM,6),PHASE(EBCM,6),PERIOD(6),EMEAN(EBCM),VTRAN(EBCM),
+     .     TBDRYSL(EBCM,KSL),SBDRYSL(EBCM,KSL),CCCBDRYSL(EBCM,KSL)
+      COMMON/QBC/
+     .     NUMQBC,IQD(QBCM),JQD(QBCM),IQC(QBCM),JQC(QBCM),
+     .     VQDIST(QBCM,KBM1)
+      COMMON/DBC/
+     .     NUMDBC,IDD(DBCM),JDD(DBCM),VDDIST(DBCM,KBM1)
+C
+      COMMON/FORCING/T1E,T2E,EBDRY (EBCM),DEBDRY(EBCM,2),
+     .              T1Q,T2Q,QDIS  (QBCM),DQDIS (QBCM,2),
+     .                      TDIS  (QBCM),DTDIS (QBCM,2),
+     .                      SDIS  (QBCM),DSDIS (QBCM,2),
+     .                      CCCDIS  (QBCM),DCCCDIS (QBCM,2),
+     .              T1D,T2D,QDIFF (DBCM),DQDIFF(DBCM,2),
+     .                      TDIFF (DBCM),DTDIFF(DBCM,2),
+     .                      SDIFF (DBCM),DSDIFF(DBCM,2),
+     .                      CCCDIFF (DBCM),DCCCDIFF(DBCM,2),
+     .              T1M,T2M,QPREC       ,DQPREC(     2),
+     .                      QEVAP       ,DQEVAP(     2),
+     .                      TX          ,DTX   (     2),
+     .                      TY          ,DTY   (     2),
+     .                       HFLUX      ,DHFLUX(     2),
+     .              T1TS,T2TS,TBDRY(EBCM,KBM1),DTBDRY(EBCM,KBM1,2),
+     .                        SBDRY(EBCM,KBM1),DSBDRY(EBCM,KBM1,2),
+     .                    CCCBDRY(EBCM,KBM1),DCCCBDRY(EBCM,KBM1,2)
+
+
+c--------------------- variables for inputting velocity in BH study ----------------
+c	integer t1u,t2u,iutemp
+
+	COMMON/UVINPUT/UAFBDRY(EBCM),DUAFBDRY(EBCM,2),VAFBDRY(EBCM),
+     .	DVAFBDRY(EBCM,2),UFBDRY(EBCM,KB),DUFBDRY(EBCM,KB,2),
+     .	VFBDRY(EBCM,KB),DVFBDRY(EBCM,KB,2),T1U,T2U,IUTEMP,
+     .  UIN(2),VIN(2),UFIN(KB,2),VFIN(KB,2),UDEL,VDEL
+
+      INTEGER ISMP(NSMPNTS),JSMP(NSMPNTS)
+
+	common/samp1/ius1,ius2,ius3,ius4
+	common/samp2/ismp,jsmp

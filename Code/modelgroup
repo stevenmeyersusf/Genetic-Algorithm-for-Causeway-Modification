@@ -1,0 +1,108 @@
+#!/bin/sh
+# April 2022, S. Meyers
+# this is script for executing multiple simultaneous model runs
+# sleep intervals are to insure models do not overlap before reading
+# otbchoice.dat. Intended to be run as 'system()' command in genmain.f
+
+maxgen=15  # max number of generations to cycle
+npop=4     # number in active population
+npop1="$(($npop-1))"
+rootname="pt08"
+prefix="SID_0"  # chrom index # is assumed in main.f ~L103
+suff=".dat"
+rfile="rank_"
+efile="finished_"
+cd '/home/meyers/Sci/ECOM/GA/PT/Code'
+
+
+#ensure update 
+make otbpt
+make propagate
+
+
+# rank file is tracked through all generations
+rankfile="$rfile$rootname"
+echo ${#rankfile} > rankfilename
+echo $rankfile >> rankfilename
+
+#-----------------------------------------------------
+# initialize rank file of fitness scores
+#------------------------------------------------------
+echo "SID          gen#     fscore" >"$rankfile" 
+
+#--------------------e----------------------------------
+# loop sids
+#------------------------------------------------------
+
+touch otbpt  # update date for comparison to final particle file time
+
+#*************************************************
+# BEGIN GENETIC ALGORITHM
+#*************************************************
+for (( gcnt=1; gcnt <= $maxgen ; gcnt++ )); do
+  echo "********************"
+  echo "*** GENERATION "$gcnt"***"
+  echo "********************"
+# endfile is list of finished for each generation
+  endfile="$efile$rootname"
+  echo ${#endfile} > endfilename
+  echo $endfile >> endfilename
+
+#----------------------------------------------------------
+# (re)initialize list of population members that have finished
+#----------------------------------------------------------
+  echo "SID" >"$endfile"
+
+#----------------------------------------------------------
+# initiate this generation of models
+#----------------------------------------------------------
+  cnt=-1 # population member number      
+  until test $cnt -eq $npop1
+  do
+    ((cnt++))
+    sfile="$prefix$cnt$suff"
+    echo $sfile
+    echo $sfile > otb_config.dat
+    echo $rootname >> otb_config.dat
+
+#   assign .exe to CPU
+    if test $cnt -lt $npop
+    then
+      taskset -c $cnt ./otbpt &
+    else
+      cnt2="$((cnt-4))"
+      taskset -c $cnt2 ./otbpt &
+    fi
+    sleep 20s  # pause for reading runfile
+  
+  done
+
+#---------------------------------------------------
+# check 'endfile' for list of finished
+# if number in list = number of pop, then continue
+#---------------------------------------------------
+  input="$endfile"
+  ecnt=0
+  echo "checking ecnt "$endfile
+  until test $ecnt -gt $npop  # repeating check of how many finished
+  do
+    ecnt=0
+    sleep 3m
+    while read -r line
+    do  
+      ((ecnt++))
+    done < "$input"
+    echo "ecnt="$ecnt
+  done
+#-----------------------------------------------------
+# examines fitness scores, creates new generation
+#----------------------------------------------------
+  echo "propagating new generation from "$gcnt
+  ./propagate
+
+done
+   
+
+echo "FINISHED OTB GA"
+
+

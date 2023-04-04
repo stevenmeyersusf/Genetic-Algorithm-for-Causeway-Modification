@@ -1,0 +1,38 @@
+       SUBROUTINE SAMPOUT
+C     OUTPUTS THE ELEVATION, TEMPERATURE, SALINITY, AND VELOCITY 
+C     AT THE POINTS IN (ismp,jsmp)
+
+c     GRID POINTS TO BE SAMPLED ARE:
+C     MOUTH OF BISHOPS HARBOR  (48,28)  ***
+C     EPC INSIDE MCKAY BAY     (55,71)
+C     EPC INSIDE EAST BAY      (54,68)
+C     MOUTH OF EAST BAY        (55,66)  ***
+C     EPC OLD TAMPA BAY        (23,70)
+C     EPC HILLSBOROUGH BAY     (54,54)
+C     22ND ST CAUSEWAY         (54,70)
+C     MIDDLE TAMPA BAY         (28,39)
+C     MOUTH OF HILLSBOROUGH RIVER   (48,73) & (48,72)    ***
+C     MOUTH OF ALAFIA RIVER         (61,56)    ***
+C     *** indicates for use in subregional model
+
+      INCLUDE 'comdeck'
+
+      WRITE(IUS1,*) INT   ! ELEVATION FILE
+      WRITE(IUS2,*) INT   ! VELOCITY FILE
+      WRITE(IUS3,*) INT   ! TEMPERATURE FILE
+      WRITE(IUS4,*) INT   ! SALINITY FILE
+      DO 500 IP=1,NSMPNTS
+         I = ISMP(IP)
+         J = JSMP(IP)
+         WRITE(IUS1,100) EL(I,J)
+c         WRITE(IUS2,100) (U(I,J,K),K=1,KB)
+c         WRITE(IUS2,100) (V(I,J,K),K=1,KB)
+c         WRITE(IUS3,100) (T(I,J,K),K=1,KB)
+         WRITE(IUS4,100) (S(I,J,K),K=1,KB)
+ 500  CONTINUE
+ 100  FORMAT(8F10.4)
+
+      RETURN
+      END
+
+

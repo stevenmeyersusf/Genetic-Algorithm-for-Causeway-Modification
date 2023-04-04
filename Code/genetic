@@ -1,0 +1,55 @@
+c23456789012345678901234567890123456789012345678901234567890123456789012
+c  common block for genetic algorithm project, started 4/13/2022, S. Meyers
+c  this version designed for use in ECOM (Vincent 2001) version
+c  => need to reorganize by algorithm task
+
+c  total # active cells, # causeway spans,max # members of population
+       parameter(nexp=6)  ! # experiments (loops)
+       parameter(nc=9,nspan=6,npopmax=80)    
+       parameter(nmaxkeep=80)
+       parameter(ielite=1)  ! flag for elitism
+       parameter(frcmut=1)  ! flag for strong mutation
+
+c  active cell coords, cell-span identifier
+c       integer is(nc),js(nc),idxc(nc) 
+c  # cells in span, max # cuts 
+c       integer ncellspan(nspan),ncutx(nspan)        
+c  flag if span can be cut, 0-no cuts, 1-cuts
+c       integer ispan(nspan)
+c  array of cell status 0-closed, 1-open
+c       integer id(nc)
+
+       integer igen            ! generaton # 
+       real r(nc),rsort(nc)    ! random values, sorted, make matrix in full
+       real fitsort(npopmax)   ! sorted list of fitness scores
+       real ttest              ! time (d) to fitness test
+       real fscore(npopmax),fsort(npopmax)  !fitness score and sorted score
+       real escr
+
+       integer ifsort(npopmax)
+       integer ipopcnt         ! # in active population 
+       integer isort(nc)       ! r index of sorted, matrix in full project
+       integer ifitsort(npopmax)  ! index of sorted fitness scores
+       integer irlen           ! length of rankfile name
+       integer irsort(nc)
+       integer nkeep
+       integer keep(nmaxkeep)  ! pop id kept in roulette
+       integer npop            ! # active 
+       integer iall            ! # all SIDs
+
+       character*9 sid         ! id code, size must match nc
+       character*9 esid        ! elite sid
+       character*2 ichrom      ! chromosome index
+       character*2 sgen
+       character*10 sidfile
+       character*9 sidlist(npopmax)  ! size must be 'nc'
+       character*9 sidall(1000)
+       character*9 sidelite          ! sid of elite 
+       character*80 rankfile
+
+       common/genetic1/is(nc),js(nc),idxc(nc),ncellspan(nspan),sgen,
+     & ncutx(nspan),igen,ifitsort,rankfile,irlen,ipopcnt,sidlist,sidall
+       common/genetic2/ispan(nspan),id(nc),sid,sidfile,ichrom,ttest,
+     & tmin,fscore,fsort,ifsort,keep,npop,iall,escr,esid
+
+
